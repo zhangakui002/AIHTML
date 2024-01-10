@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChatGPT Code Generator</title>
+  <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+</head>
+<body>
+
+<div id="app">
+  <!-- Top row: API Key input -->
+  <div>
+    <label for="apiKey">Enter ChatGPT API Key:</label>
+    <input type="text" v-model="apiKey" id="apiKey" />
+  </div>
+
+  <!-- Middle row: Code display and editor -->
+  <div style="display: flex; height: calc(100vh - 150px);">
+    <!-- Code display area -->
+    <div style="flex: 1; border: 1px solid #ccc; padding: 10px;">
+      <div v-html="userCode"></div>
+    </div>
+    
+    <!-- Code editor area -->
+    <textarea v-model="userCode" style="flex: 1; margin-left: 10px; height: 100%;"></textarea>
+  </div>
+
+  <!-- Bottom row: User input and send button -->
+  <div>
+    <label for="userInput">User Input:</label>
+    <input type="text" v-model="userInput" id="userInput" />
+    <button @click="sendUserInput">Send</button>
+  </div>
+</div>
+
+<script>
+    new Vue({
+      el: '#app',
+      data: {
+        apiKey: '',
+        generatedCode: '',
+        userCode: '',
+        userInput: ''
+      },
+      methods: {
+        async sendUserInput() {
+          try {
+            const response = await fetch('/api/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${this.apiKey}`
+              },
+              body: JSON.stringify({
+                model: 'gpt-3.5-turbo', // Replace with your model name
+                messages: [
+                  { role: 'system', content: '你是一个tailwind的代码生成器，并且是单个页面生成，你生成的代码，应当是我可以直接复制到html文件中可以直接运行的。你的回答应该只包含代码，不需要其他文字。' },
+                  { role: 'user', content: this.userInput }
+                ]
+              })
+            });
+  
+            const data = await response.json();
+  
+            // Assuming OpenAI response has an 'choices' property with HTML content
+            const generatedHTML = data.choices[0].message.content;
+  
+            this.userCode = generatedHTML;
+          } catch (error) {
+            console.error('Error fetching data:', error);
+            // Handle errors as needed
+          }
+        }
+      }
+    });
+  </script>
+
+</body>
+</html>
